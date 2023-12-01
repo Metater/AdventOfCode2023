@@ -36,7 +36,8 @@ foreach (var part in parts)
 {
     Console.WriteLine($"Running {part.Day} {part.Part}...");
 
-    var lines = File.ReadAllLines(part.InputPath);
+    var lines = File.ReadAllLines(part.InputPath)
+        .Where(l => !string.IsNullOrWhiteSpace(l));
     part.DayPart.Run([.. lines]);
 }
 

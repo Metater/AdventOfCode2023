@@ -21,7 +21,6 @@ internal class Part2 : DayPart
     public override void Run(List<string> input)
     {
         var sum = input
-            .Where(l => !string.IsNullOrEmpty(l))
             .Sum(l =>
             {
                 char first = ' ';
