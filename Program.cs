@@ -2,8 +2,6 @@
 using AdventOfCode2023;
 using AdventOfCode2023.Days;
 
-#pragma warning disable CS0162 // Unreachable code detected
-
 Console.WriteLine("Hello, World!");
 
 const bool OnlyRunLastPart = false;
@@ -28,27 +26,18 @@ foreach (var type in assembly.GetTypes())
 }
 
 parts = [.. parts.OrderBy(p => p.Day + p.Part)];
-
-if (OnlyRunLastPart)
+if (OnlyRunLastPart && parts.Count > 0)
 {
-    var part = parts.LastOrDefault();
-    if (part is not null)
-    {
-        Console.WriteLine($"Running {part.Day} {part.Part}...");
-
-        var lines = File.ReadAllLines(part.InputPath);
-        part.DayPart.Run([.. lines]);
-    }
+    Console.WriteLine("Only running last part!");
+    parts = [parts.Last()];
 }
-else
-{
-    foreach (var part in parts)
-    {
-        Console.WriteLine($"Running {part.Day} {part.Part}...");
 
-        var lines = File.ReadAllLines(part.InputPath);
-        part.DayPart.Run([.. lines]);
-    }
+foreach (var part in parts)
+{
+    Console.WriteLine($"Running {part.Day} {part.Part}...");
+
+    var lines = File.ReadAllLines(part.InputPath);
+    part.DayPart.Run([.. lines]);
 }
 
 record RunnablePart(string InputPath, DayPart DayPart, string Day, string Part);
