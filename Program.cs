@@ -1,8 +1,10 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using AdventOfCode2023;
 using AdventOfCode2023.Days;
 
 Console.WriteLine("Hello, World!");
+Console.WriteLine("--------------------------------");
 
 const bool OnlyRunLastPart = false;
 
@@ -26,19 +28,29 @@ foreach (var type in assembly.GetTypes())
 }
 
 parts = [.. parts.OrderBy(p => p.Day + p.Part)];
+
 if (OnlyRunLastPart && parts.Count > 0)
 {
     Console.WriteLine("Only running last part!");
+    Console.WriteLine("--------------------------------");
     parts = [parts.Last()];
 }
 
 foreach (var part in parts)
 {
-    Console.WriteLine($"Running {part.Day} {part.Part}...");
+    Console.WriteLine($"{part.Day} {part.Part} output below:");
 
     var lines = File.ReadAllLines(part.InputPath)
-        .Where(l => !string.IsNullOrWhiteSpace(l));
-    part.DayPart.Run([.. lines]);
+        .Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+
+    Console.WriteLine($"Loaded {lines.Count} lines. Running...");
+
+    Stopwatch stopwatch = Stopwatch.StartNew();
+    part.DayPart.Run(lines);
+    stopwatch.Stop();
+
+    Console.WriteLine($"{part.Day} {part.Part} took {stopwatch.Elapsed.TotalMilliseconds}ms to run.");
+    Console.WriteLine("--------------------------------");
 }
 
 record RunnablePart(string InputPath, DayPart DayPart, string Day, string Part);
