@@ -31,9 +31,21 @@ parts = [.. parts.OrderBy(p => p.Day + p.Part)];
 
 if (OnlyRunLastPart && parts.Count > 0)
 {
+    parts = [parts.Last()];
+
     Console.WriteLine("Only running last part!");
     Console.WriteLine("--------------------------------");
-    parts = [parts.Last()];
+}
+else if (parts.Any(p => p.DayPart.HasPrecedence))
+{
+    parts = parts.Where(p => p.DayPart.HasPrecedence).ToList();
+
+    Console.WriteLine("Giving precedence to specific day part(s):");
+    foreach (var part in parts)
+    {
+        Console.WriteLine($"{part.Day} {part.Part}");
+    }
+    Console.WriteLine("--------------------------------");
 }
 
 foreach (var part in parts)
