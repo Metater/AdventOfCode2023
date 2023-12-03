@@ -5,7 +5,7 @@ namespace AdventOfCode2023.Days.Day3;
 
 internal class Part2 : DayPart
 {
-    public override bool HasPrecedence => true;
+    //public override bool HasPrecedence => true;
     //public override string InputFile => "Example.txt";
 
     public override void Run(List<string> input)
@@ -14,9 +14,9 @@ internal class Part2 : DayPart
         List<char> grid = input.SelectMany(x => x).ToList();
         var schematic = new EngineSchematic(grid, input[0].Length, input.Count);
 
-        char GetChar(int xx, int yy) => schematic!.Grid[xx + (yy * schematic.Height)];
+        char GetChar(int x, int y) => schematic!.Grid[x + (y * schematic.Height)];
 
-        Dictionary<int, char> numberRootIndicies = [];
+        List<(int, (char, (int x, int y)))> numberRootIndicies = [];
 
         var symbols = schematic.GetSymbols().ToList();
         foreach ((var symbol, var coords) in symbols)
@@ -40,7 +40,7 @@ internal class Part2 : DayPart
                     }
                 }
 
-                numberRootIndicies.Add(rootX + (y * schematic.Height), symbol);
+                numberRootIndicies.Add((rootX + (y * schematic.Height), (symbol, coords)));
 
                 //Console.WriteLine(GetChar(rootX, y));
                 //Console.WriteLine($"({x}, {y})");
@@ -48,10 +48,10 @@ internal class Part2 : DayPart
             }
         }
 
-        List<int> partNumbers = [];
+        Dictionary<int, HashSet<int>> gearRatios = [];
 
         StringBuilder sb = new();
-        foreach (var index in numberRootIndicies)
+        foreach ((var index, (var symbol, var coords)) in numberRootIndicies)
         {
             (var x, var y) = schematic.IndexToCoords(index);
             sb.Append(grid[index]);
@@ -67,16 +67,37 @@ internal class Part2 : DayPart
                 }
                 else
                 {
-                    x++;
+                    x--;
                     break;
                 }
             }
 
-            partNumbers.Add(int.Parse(sb.ToString()));
+            int number = int.Parse(sb.ToString());
+            if (symbol == '*')
+            {
+                int gearIndex = coords.x + (coords.y * schematic.Height);
+                if (gearRatios.TryGetValue(gearIndex, out var values))
+                {
+                    values.Add(number);
+                }
+                else
+                {
+                    gearRatios.Add(gearIndex, [number]);
+                }
+            }
             sb.Clear();
         }
 
-        Console.WriteLine(partNumbers.Sum());
+        Console.WriteLine(gearRatios.Values.Sum(v =>
+        {
+            if (v.Count == 2)
+            {
+                var e = v.ToList();
+                return e[0] * e[1];
+            }
+
+            return 0;
+        }));
     }
 
     record EngineSchematic(List<char> Grid, int Width, int Height)
