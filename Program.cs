@@ -52,8 +52,10 @@ foreach (var part in parts)
 {
     Console.WriteLine($"{part.Day} {part.Part} output below:");
 
+    bool ShouldKeepLine(string line) => !(part!.DayPart.ShouldRejectWhiteSpaceLines && string.IsNullOrWhiteSpace(line));
+
     var lines = File.ReadAllLines(part.InputPath)
-        .Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+        .Where(ShouldKeepLine).ToList();
 
     Console.WriteLine($"Loaded {lines.Count} lines. Running...");
 
