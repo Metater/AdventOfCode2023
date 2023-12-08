@@ -2,7 +2,7 @@
 
 internal class Part2 : DayPart
 {
-    public override bool HasPrecedence => true;
+    //public override bool HasPrecedence => true;
     //public override string InputFile => "Example.txt";
     //public override bool ShouldRejectWhiteSpaceLines => false;
 
@@ -80,7 +80,7 @@ internal class Part2 : DayPart
                     }
                 }
 
-                throw new Exception();
+                return 0;
             }
 
             if (xHandType < yHandType)
@@ -95,10 +95,16 @@ internal class Part2 : DayPart
 
         private HandType GetHandType()
         {
+            bool containsJokers = false;
             List<Occurances> occurances = [];
             for (int i = 0; i < 5; i++)
             {
                 char card = Hand[i];
+
+                if (card == 'J')
+                {
+                    containsJokers = true;
+                }
 
                 bool isNew = true;
                 for (int j = 0; j < occurances.Count; j++)
@@ -118,6 +124,11 @@ internal class Part2 : DayPart
             }
 
             occurances = [.. occurances.OrderByDescending(o => o.Count)];
+
+            if (containsJokers)
+            {
+                return GetHandTypeWithJokers(occurances);
+            }
 
             switch (occurances.Count)
             {
@@ -161,6 +172,159 @@ internal class Part2 : DayPart
             }
         }
 
+        private HandType GetHandTypeWithJokers(List<Occurances> occurances)
+        {
+            int originalOccurancesCount = occurances.Count;
+
+            int jokerCount = 0;
+            occurances.RemoveAll(o =>
+            {
+                if (o.Card == 'J')
+                {
+                    if (jokerCount != 0)
+                    {
+                        throw new Exception();
+                    }
+
+                    jokerCount = o.Count;
+                    return true;
+                }
+
+                return false;
+            });
+
+            if (jokerCount == 0 || occurances.Count != (originalOccurancesCount - 1))
+            {
+                throw new Exception();
+            }
+
+            switch (occurances.Count)
+            {
+                case 0:
+                    return HandType.FiveOfAKind;
+                case 1:
+                    {
+                        string test = Hand.Replace('J', occurances[0].Card);
+                        if (test.Count(c => c == occurances[0].Card) != 5)
+                        {
+                            throw new Exception();
+                        }
+                    }
+
+                    return HandType.FiveOfAKind;
+                case 2:
+                    if (occurances[0].Count == 3)
+                    {
+                        {
+                            string test = Hand.Replace('J', occurances[0].Card);
+                            if (test.Count(c => c == occurances[0].Card) != 4 ||
+                                test.Count(c => c == occurances[1].Card) != 1)
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        return HandType.FourOfAKind;
+                    }
+
+                    if (occurances[0].Count == 2 && jokerCount == 2)
+                    {
+                        {
+                            string test = Hand.Replace('J', occurances[0].Card);
+                            if (test.Count(c => c == occurances[0].Card) != 4 ||
+                                test.Count(c => c == occurances[1].Card) != 1)
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        return HandType.FourOfAKind;
+                    }
+
+                    if (occurances[0].Count == 2 && jokerCount == 1)
+                    {
+                        {
+                            string test = Hand.Replace('J', occurances[0].Card);
+                            if (test.Count(c => c == occurances[0].Card) != 3 ||
+                                test.Count(c => c == occurances[1].Card) != 2)
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        return HandType.FullHouse;
+                    }
+
+                    if (jokerCount == 3)
+                    {
+                        {
+                            string test = Hand.Replace('J', occurances[0].Card);
+                            if (test.Count(c => c == occurances[0].Card) != 4 ||
+                                test.Count(c => c == occurances[1].Card) != 1)
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        return HandType.FourOfAKind;
+                    }
+
+                    throw new Exception();
+                case 3:
+                    if (occurances[0].Count == 2 && jokerCount == 1)
+                    {
+                        {
+                            string test = Hand.Replace('J', occurances[0].Card);
+                            if (test.Count(c => c == occurances[0].Card) != 3 ||
+                                test.Count(c => c == occurances[1].Card) != 1 ||
+                                test.Count(c => c == occurances[2].Card) != 1)
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        return HandType.ThreeOfAKind;
+                    }
+
+                    if (occurances[0].Count == 1 && jokerCount == 2)
+                    {
+                        {
+                            string test = Hand.Replace('J', occurances[0].Card);
+                            if (test.Count(c => c == occurances[0].Card) != 3 ||
+                                test.Count(c => c == occurances[1].Card) != 1 ||
+                                test.Count(c => c == occurances[2].Card) != 1)
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        return HandType.ThreeOfAKind;
+                    }
+
+                    throw new Exception();
+                case 4:
+                    if (occurances[0].Count == 1 && jokerCount == 1)
+                    {
+                        {
+                            string test = Hand.Replace('J', occurances[0].Card);
+                            if (test.Count(c => c == occurances[0].Card) != 2 ||
+                                test.Count(c => c == occurances[1].Card) != 1 ||
+                                test.Count(c => c == occurances[2].Card) != 1 ||
+                                test.Count(c => c == occurances[3].Card) != 1)
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        return HandType.OnePair;
+                    }
+
+                    throw new Exception();
+                default:
+                    throw new Exception();
+            }
+        }
+
         private record struct Occurances(char Card, int Count);
 
         public override string ToString()
@@ -180,7 +344,7 @@ internal class Part2 : DayPart
             case 'Q':
                 return 12;
             case 'J':
-                return 11;
+                return 1;
             case 'T':
                 return 10;
             default:
