@@ -29,32 +29,47 @@ internal class Part2 : DayPart
             cache.Add(node.Self, node.Pair);
         }
 
-        int i = 0;
-        string currentNode = "AAA";
+        List<string> currentNodes = network.Select(n => n.Self).Where(s => s.EndsWith('A')).ToList();
+
+        //currentNodes.ForEach(Console.WriteLine);
+
+        bool IsDone()
+        {
+            return currentNodes.All(n => n[2] == 'Z');
+        }
+
+        long i = 0;
         while (true)
         {
-            if (cache.TryGetValue(currentNode, out var pair))
+            bool shouldGoRight = instructionIterator.GetNext();
+
+            for (int j = 0; j < currentNodes.Count; j++)
             {
-                bool shouldGoRight = instructionIterator.GetNext();
-                if (shouldGoRight)
+                string currentNode = currentNodes[j];
+                if (cache.TryGetValue(currentNode, out var pair))
                 {
-                    currentNode = pair.Right;
+                    if (shouldGoRight)
+                    {
+                        currentNode = pair.Right;
+                    }
+                    else
+                    {
+                        currentNode = pair.Left;
+                    }
                 }
                 else
                 {
-                    currentNode = pair.Left;
+                    throw new Exception();
                 }
 
-                i++;
-
-                if (currentNode == "ZZZ")
-                {
-                    break;
-                }
+                currentNodes[j] = currentNode;
             }
-            else
+
+            i++;
+
+            if (IsDone())
             {
-                throw new Exception();
+                break;
             }
         }
 
