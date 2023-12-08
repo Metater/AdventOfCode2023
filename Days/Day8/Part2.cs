@@ -33,10 +33,7 @@ internal class Part2 : DayPart
 
         //currentNodes.ForEach(Console.WriteLine);
 
-        bool IsDone()
-        {
-            return currentNodes.All(n => n[2] == 'Z');
-        }
+        long[] paths = new long[currentNodes.Count];
 
         long i = 0;
         while (true)
@@ -63,17 +60,43 @@ internal class Part2 : DayPart
                 }
 
                 currentNodes[j] = currentNode;
+
+                if (currentNode[2] == 'Z')
+                {
+                    if (paths[j] == 0)
+                    {
+                        paths[j] = i;
+                    }
+                }
             }
 
             i++;
 
-            if (IsDone())
+            if (paths.All(p => p != 0))
             {
                 break;
             }
         }
 
-        Console.WriteLine(i);
+        for (int j = 0; j < paths.Length; j++)
+        {
+            paths[j] = paths[j] + 1;
+        }
+
+        Console.WriteLine(LcmArray(paths));
+
+        //for (int j = 0; j < paths.Length; j++)
+        //{
+        //    Console.WriteLine(j);
+        //    Console.WriteLine(paths[j][0]);
+        //    for (int k = 1; k < paths[j].Count; k++)
+        //    {
+        //        Console.WriteLine($"\t{paths[j][k] - paths[j][k - 1]}");
+        //    }
+        //}
+
+        // Attempted:
+        // 1584096016678838644
     }
 
     private class InstructionIterator(string instructions)
@@ -134,5 +157,37 @@ internal class Part2 : DayPart
         {
             return $"Self:{Self}|{Pair}";
         }
+    }
+
+    //private static long Gcf(long a, long b)
+    //{
+    //    while (b != 0)
+    //    {
+    //        long temp = b;
+    //        b = a % b;
+    //        a = temp;
+    //    }
+
+    //    return a;
+    //}
+
+    //private static long Lcm(long a, long b)
+    //{
+    //    return (a / Gcf(a, b)) * b;
+    //}
+
+    private static long LcmArray(long[] numbers)
+    {
+        return numbers.Aggregate(Lcm);
+    }
+
+    private static long Lcm(long a, long b)
+    {
+        return Math.Abs(a * b) / Gcd(a, b);
+    }
+
+    private static long Gcd(long a, long b)
+    {
+        return b == 0 ? a : Gcd(b, a % b);
     }
 }
