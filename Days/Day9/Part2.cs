@@ -2,7 +2,7 @@
 
 internal class Part2 : DayPart
 {
-    public override bool HasPrecedence => true;
+    //public override bool HasPrecedence => true;
     //public override string InputFile => "Example.txt";
     //public override bool ShouldRejectWhiteSpaceLines => false;
 
@@ -33,16 +33,16 @@ internal class Part2 : DayPart
     private static long Extrapolate(Stack<History> stack)
     {
         var lastValues = stack.Pop().Values;
-        lastValues.Add(0);
+        lastValues.Insert(0, 0);
 
         while (stack.TryPop(out var sequence))
         {
             var values = sequence.Values;
-            values.Add(values.Last() + lastValues.Last());
+            values.Insert(0, values.First() - lastValues.First());
             lastValues = values;
         }
 
-        return lastValues.Last();
+        return lastValues.First();
     }
 
     record History(List<long> Values)
