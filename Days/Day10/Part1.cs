@@ -2,16 +2,16 @@
 
 internal class Part1 : DayPart
 {
-    public override bool HasPrecedence => true;
-    public override string InputFile => "Example.txt";
+    //public override bool HasPrecedence => true;
+    //public override string InputFile => "Example.txt";
     //public override bool ShouldRejectWhiteSpaceLines => false;
 
     public override void Run(List<string> input)
     {
-        Func<Position, char> getTile = (Position position) =>
+        char GetTile(Position position)
         {
             return input[position.Y][position.X];
-        };
+        }
 
         int width = input[0].Length;
         int height = input.Count;
@@ -24,7 +24,7 @@ internal class Part1 : DayPart
             {
                 Position position = new(x, y);
 
-                if (getTile(position) == 'S')
+                if (GetTile(position) == 'S')
                 {
                     if (startingIndex == -1)
                     {
@@ -43,13 +43,19 @@ internal class Part1 : DayPart
         Pipe correctStartingPipeVariant = Pipe.None;
         foreach (var startingPipeVariation in startingPipeVariations)
         {
-            var surrounding = GetPipeSurroundingPositions(startingPosition, startingPipeVariation, width, height).ToList();
+            if (startingPipeVariation == (Pipe.East | Pipe.West))
+            {
+                _ = 42;
+            }
+
+            var surrounding = GetPipeSurroundingPositions(startingPosition, startingPipeVariation, width, height)
+                .ToList();
             bool isCorrectPipeVariation = surrounding.All(p =>
             {
-                return CanAcceptConnection(p.fromDirection, p.toPosition, getTile, out _);
+                return CanAcceptConnection(p.fromDirection, p.toPosition, GetTile, out _);
             });
 
-            if (isCorrectPipeVariation)
+            if (isCorrectPipeVariation && surrounding.Count == 2)
             {
                 correctStartingPipeVariant = startingPipeVariation;
                 break;
@@ -68,34 +74,93 @@ internal class Part1 : DayPart
             throw new Exception();
         }
 
-        var pathSteps = new Steps[paths.Count];
-        int steps = 0;
+        Steps steps = new(width, height);
+        int stepCount = 0;
         while (true)
         {
             for (int i = 0; i < paths.Count; i++)
             {
                 (Pipe fromDirection, Position toPosition) = paths[i];
-                if (!CanAcceptConnection(fromDirection, toPosition, getTile, out var toDirection))
+                var pos = toPosition;
+                if (!CanAcceptConnection(fromDirection, toPosition, GetTile, out var toDirection))
                 {
                     throw new Exception();
                 }
 
-                Pipe toPipe = CharToPipe(getTile(toPosition));
-                var next = GetPipeSurroundingPositions(toPosition, toPipe, width, height)
-                    .Where(p => p.fromDirection == toDirection)
-                    .ToList();
+                (fromDirection, toPosition) = Trace(toDirection, toPosition, GetTile, width, height);
+                paths[i] = (fromDirection, toPosition);
+                //Console.WriteLine(GetTile(toPosition));
 
-                if (next.Count != 1)
+                if (!steps.TryRecord(pos, stepCount))
                 {
-                    throw new Exception();
+                    goto Done;
                 }
-
-                paths[i] = next.First();
-
-                _ = 42;
             }
 
-            steps++;
+            stepCount++;
+        }
+
+    Done:;
+
+        Console.WriteLine(stepCount + 1);
+
+        //var pathSteps = new Steps[paths.Count];
+        //int steps = 0;
+        //while (true)
+        //{
+        //    for (int i = 0; i < paths.Count; i++)
+        //    {
+        //        (Pipe fromDirection, Position toPosition) = paths[i];
+        //        if (!CanAcceptConnection(fromDirection, toPosition, GetTile, out var toDirection))
+        //        {
+        //            throw new Exception();
+        //        }
+
+        //        Pipe toPipe = CharToPipe(GetTile(toPosition));
+        //        var next = GetPipeSurroundingPositions(toPosition, toPipe, width, height)
+        //            .Where(p => p.fromDirection == toDirection)
+        //            .ToList();
+
+        //        if (next.Count != 1)
+        //        {
+        //            throw new Exception();
+        //        }
+
+        //        paths[i] = next.First();
+
+        //        _ = 42;
+        //    }
+
+        //    steps++;
+        //}
+    }
+
+    private static (Pipe fromDirection, Position toPosition) Trace(Pipe toDirection, Position toPosition, Func<Position, char> getTile, int width, int height)
+    {
+        char c = getTile(toPosition);
+        Pipe pipe = CharToPipe(c);
+
+        Pipe nextDirection = pipe ^ toDirection;
+        switch (nextDirection)
+        {
+            case Pipe.North:
+                Position offset = toPosition.Offset(0, -1);
+                offset.XYBoundsCheck(width, height);
+                return (Pipe.North, offset);
+            case Pipe.East:
+                offset = toPosition.Offset(1, 0);
+                offset.XYBoundsCheck(width, height);
+                return (Pipe.East, offset);
+            case Pipe.South:
+                offset = toPosition.Offset(0, 1);
+                offset.XYBoundsCheck(width, height);
+                return (Pipe.South, offset);
+            case Pipe.West:
+                offset = toPosition.Offset(-1, 0);
+                offset.XYBoundsCheck(width, height);
+                return (Pipe.West, offset);
+            default:
+                throw new Exception();
         }
     }
 
@@ -136,38 +201,38 @@ internal class Part1 : DayPart
         {
             connectionCount++;
             Position offset = position.Offset(0, -1);
-            offset.XYBoundsCheck(width, height);
-            yield return (Pipe.North, offset);
+            if (offset.IsWithinBounds(width, height))
+                yield return (Pipe.North, offset);
         }
 
         if (pipe.HasFlag(Pipe.East))
         {
             connectionCount++;
             Position offset = position.Offset(1, 0);
-            offset.XYBoundsCheck(width, height);
-            yield return (Pipe.East, offset);
+            if (offset.IsWithinBounds(width, height))
+                yield return (Pipe.East, offset);
         }
 
         if (pipe.HasFlag(Pipe.South))
         {
             connectionCount++;
             Position offset = position.Offset(0, 1);
-            offset.XYBoundsCheck(width, height);
-            yield return (Pipe.South, offset);
+            if (offset.IsWithinBounds(width, height))
+                yield return (Pipe.South, offset);
         }
 
         if (pipe.HasFlag(Pipe.West))
         {
             connectionCount++;
             Position offset = position.Offset(-1, 0);
-            offset.XYBoundsCheck(width, height);
-            yield return (Pipe.West, offset);
+            if (offset.IsWithinBounds(width, height))
+                yield return (Pipe.West, offset);
         }
 
-        if (connectionCount != 2)
-        {
-            throw new Exception();
-        }
+        //if (connectionCount != 2)
+        //{
+        //    throw new Exception();
+        //}
     }
 
     private static IEnumerable<Pipe> GetStartingPositionPipeVariations()
@@ -206,23 +271,20 @@ internal class Part1 : DayPart
         West = 8,
     }
 
-    // Steps should be for each path taken
     private class Steps(int width, int height)
     {
-        private readonly int width = width;
-        private readonly int height = height;
         // tile index, step count
         private readonly Dictionary<int, int> steps = [];
 
         public bool TryRecord(Position position, int stepCount)
         {
             int index = position.GetIndex(width, height);
-            if (steps.TryGetValue(index, out _))
+            if (steps.ContainsKey(index))
             {
                 return false;
             }
 
-            steps[index] = stepCount;
+            steps.Add(index, stepCount);
             return true;
         }
 
@@ -235,6 +297,21 @@ internal class Part1 : DayPart
     private record struct Position(int X, int Y)
     {
         // Top left corner is (0, 0)
+
+        public readonly bool IsWithinBounds(int width, int height)
+        {
+            if (X < 0 || X >= width)
+            {
+                return false;
+            }
+
+            if (Y < 0 || Y >= height)
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         public readonly void XYBoundsCheck(int width, int height)
         {
