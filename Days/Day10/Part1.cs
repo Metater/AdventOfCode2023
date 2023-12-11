@@ -3,17 +3,15 @@
 internal class Part1 : DayPart
 {
     public override bool HasPrecedence => true;
-    //public override string InputFile => "Example.txt";
+    public override string InputFile => "Example.txt";
     //public override bool ShouldRejectWhiteSpaceLines => false;
 
     public override void Run(List<string> input)
     {
-        char GetTile(Position position)
+        Func<Position, char> getTile = (Position position) =>
         {
             return input[position.Y][position.X];
-        }
-
-        Func<Position, char> getTile = GetTile;
+        };
 
         int width = input[0].Length;
         int height = input.Count;
@@ -42,17 +40,94 @@ internal class Part1 : DayPart
 
         Position startingPosition = Position.FromIndex(startingIndex, width, height);
         List<Pipe> startingPipeVariations = GetStartingPositionPipeVariations().ToList();
+        Pipe correctStartingPipeVariant = Pipe.None;
+        foreach (var startingPipeVariation in startingPipeVariations)
+        {
+            var surrounding = GetPipeSurroundingPositions(startingPosition, startingPipeVariation, width, height).ToList();
+            bool isCorrectPipeVariation = surrounding.All(p =>
+            {
+                return CanAcceptConnection(p.fromDirection, p.toPosition, getTile, out _);
+            });
 
+            if (isCorrectPipeVariation)
+            {
+                correctStartingPipeVariant = startingPipeVariation;
+                break;
+            }
+        }
 
+        if (correctStartingPipeVariant == Pipe.None)
+        {
+            throw new Exception();
+        }
+
+        var paths = GetPipeSurroundingPositions(startingPosition, correctStartingPipeVariant, width, height).ToList();
+
+        if (paths.Count != 2)
+        {
+            throw new Exception();
+        }
+
+        var pathSteps = new Steps[paths.Count];
+        int steps = 0;
+        while (true)
+        {
+            for (int i = 0; i < paths.Count; i++)
+            {
+                (Pipe fromDirection, Position toPosition) = paths[i];
+                if (!CanAcceptConnection(fromDirection, toPosition, getTile, out var toDirection))
+                {
+                    throw new Exception();
+                }
+
+                Pipe toPipe = CharToPipe(getTile(toPosition));
+                var next = GetPipeSurroundingPositions(toPosition, toPipe, width, height)
+                    .Where(p => p.fromDirection == toDirection)
+                    .ToList();
+
+                if (next.Count != 1)
+                {
+                    throw new Exception();
+                }
+
+                paths[i] = next.First();
+
+                _ = 42;
+            }
+
+            steps++;
+        }
     }
 
-    private static bool CanAcceptConnection(Pipe connection, )
-
-    private static IEnumerable<Position> GetPipeSurroundingPositions(Position position, Pipe pipe, int width, int height)
+    private static bool CanAcceptConnection(Pipe fromDirection, Position toPosition, Func<Position, char> getTile, out Pipe toDirection)
     {
-        if (pipe.HasFlag(Pipe.None))
+        char c = getTile(toPosition);
+        Pipe toPipe = CharToPipe(c);
+
+        switch (fromDirection)
         {
-            yield break;
+            case Pipe.North:
+                toDirection = Pipe.South;
+                return toPipe.HasFlag(Pipe.South);
+            case Pipe.East:
+                toDirection = Pipe.West;
+                return toPipe.HasFlag(Pipe.West);
+            case Pipe.South:
+                toDirection = Pipe.North;
+                return toPipe.HasFlag(Pipe.North);
+            case Pipe.West:
+                toDirection = Pipe.East;
+                return toPipe.HasFlag(Pipe.East);
+            default:
+                throw new Exception();
+        }
+    }
+
+    private static IEnumerable<(Pipe fromDirection, Position toPosition)> GetPipeSurroundingPositions(Position position, Pipe pipe, int width, int height)
+    {
+        if (pipe == Pipe.None)
+        {
+            throw new Exception();
         }
 
         int connectionCount = 0;
@@ -61,32 +136,32 @@ internal class Part1 : DayPart
         {
             connectionCount++;
             Position offset = position.Offset(0, -1);
-            offset.BoundsCheck(width, height);
-            yield return offset;
+            offset.XYBoundsCheck(width, height);
+            yield return (Pipe.North, offset);
         }
 
         if (pipe.HasFlag(Pipe.East))
         {
             connectionCount++;
             Position offset = position.Offset(1, 0);
-            offset.BoundsCheck(width, height);
-            yield return offset;
+            offset.XYBoundsCheck(width, height);
+            yield return (Pipe.East, offset);
         }
 
         if (pipe.HasFlag(Pipe.South))
         {
             connectionCount++;
             Position offset = position.Offset(0, 1);
-            offset.BoundsCheck(width, height);
-            yield return offset;
+            offset.XYBoundsCheck(width, height);
+            yield return (Pipe.South, offset);
         }
 
         if (pipe.HasFlag(Pipe.West))
         {
             connectionCount++;
             Position offset = position.Offset(-1, 0);
-            offset.BoundsCheck(width, height);
-            yield return offset;
+            offset.XYBoundsCheck(width, height);
+            yield return (Pipe.West, offset);
         }
 
         if (connectionCount != 2)
@@ -97,26 +172,26 @@ internal class Part1 : DayPart
 
     private static IEnumerable<Pipe> GetStartingPositionPipeVariations()
     {
-        yield return Pipe.North & Pipe.South;
-        yield return Pipe.East & Pipe.West;
-        yield return Pipe.North & Pipe.East;
-        yield return Pipe.North & Pipe.West;
-        yield return Pipe.South & Pipe.West;
-        yield return Pipe.South & Pipe.East;
+        yield return CharToPipe('|');
+        yield return CharToPipe('-');
+        yield return CharToPipe('L');
+        yield return CharToPipe('J');
+        yield return CharToPipe('7');
+        yield return CharToPipe('F');
     }
 
     private static Pipe CharToPipe(char c)
     {
         return c switch
         {
-            '|' => Pipe.North & Pipe.South,
-            '-' => Pipe.East & Pipe.West,
-            'L' => Pipe.North & Pipe.East,
-            'J' => Pipe.North & Pipe.West,
-            '7' => Pipe.South & Pipe.West,
-            'F' => Pipe.South & Pipe.East,
-            '.' => throw new Exception(),
-            'S' => throw new Exception(),
+            '|' => Pipe.North | Pipe.South,
+            '-' => Pipe.East | Pipe.West,
+            'L' => Pipe.North | Pipe.East,
+            'J' => Pipe.North | Pipe.West,
+            '7' => Pipe.South | Pipe.West,
+            'F' => Pipe.South | Pipe.East,
+            '.' => Pipe.None,
+            'S' => Pipe.None,
             _ => throw new Exception(),
         };
     }
@@ -161,7 +236,7 @@ internal class Part1 : DayPart
     {
         // Top left corner is (0, 0)
 
-        public readonly void BoundsCheck(int width, int height)
+        public readonly void XYBoundsCheck(int width, int height)
         {
             if (X < 0 || X >= width)
             {
@@ -176,7 +251,7 @@ internal class Part1 : DayPart
 
         public readonly int GetIndex(int width, int height)
         {
-            BoundsCheck(width, height);
+            XYBoundsCheck(width, height);
 
             return (width * Y) + X;
         }
