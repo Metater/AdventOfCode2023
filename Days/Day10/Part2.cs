@@ -3,7 +3,7 @@
 internal class Part2 : DayPart
 {
     public override bool HasPrecedence => true;
-    //public override string InputFile => "Example.txt";
+    public override string InputFile => "Example.txt";
     //public override bool ShouldRejectWhiteSpaceLines => false;
 
     public override void Run(List<string> input)
@@ -75,6 +75,7 @@ internal class Part2 : DayPart
         }
 
         Steps steps = new(width, height);
+        steps.TryRecord(startingPosition, 0);
         int stepCount = 0;
         while (true)
         {
@@ -103,6 +104,25 @@ internal class Part2 : DayPart
     Done:;
 
         Console.WriteLine(stepCount + 1);
+
+        for (int y = 0; y < height; y++)
+        {
+            string line = "";
+            for (int x = 0; x < width; x++)
+            {
+                Position position = new(x, y);
+                if (steps.IsOccupied(position))
+                {
+                    line += "#";
+                }
+                else
+                {
+                    line += " ";
+                }
+            }
+
+            Console.WriteLine(line);
+        }
 
         //var pathSteps = new Steps[paths.Count];
         //int steps = 0;
@@ -286,6 +306,12 @@ internal class Part2 : DayPart
 
             steps.Add(index, stepCount);
             return true;
+        }
+
+        public bool IsOccupied(Position position)
+        {
+            int index = position.GetIndex(width, height);
+            return steps.ContainsKey(index);
         }
 
         public int GetHighestStepCount()
